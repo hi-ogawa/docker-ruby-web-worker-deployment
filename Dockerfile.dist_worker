@@ -1,0 +1,3 @@
+FROM dist_base
+
+CMD bundle exec sidekiq -r ./main.rb -c 1

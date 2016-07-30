@@ -1,0 +1,3 @@
+FROM dist_base
+
+CMD bundle exec puma -C puma_config.rb

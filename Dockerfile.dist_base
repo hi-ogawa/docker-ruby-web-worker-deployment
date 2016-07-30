@@ -1,0 +1,7 @@
+FROM ruby:2.3.1
+
+COPY ./build/app.tar.gz /build/app.tar.gz
+RUN tar -xzf /build/app.tar.gz -C /
+
+ENV BUNDLE_PATH /app/vendor/bundle
+WORKDIR /app

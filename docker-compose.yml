@@ -1,0 +1,68 @@
+version: "2"
+
+services:
+
+  ## bundle installer ##
+
+  bundler:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: bundle install
+    volumes:
+      - bundler_cache:/app/vendor/bundle
+
+
+  ## development ##
+
+  dev_web:
+    extends: bundler
+    command: bundle exec puma -C puma_config.rb
+    ports:
+      - 3000:3000
+    environment:
+      - PORT=3000
+      - REDIS_URL=redis://dev_redis:6379/1
+
+  dev_worker:
+    extends: bundler
+    command: bundle exec sidekiq -r ./main.rb -c 1
+    environment:
+      - REDIS_URL=redis://dev_redis:6379/1
+
+  dev_redis:
+    image: redis:3.2.1
+
+
+  ## production image generation ##
+
+  build:
+    extends: bundler
+    command: >
+      bash -c "
+        (bundle check || bundle install) &&
+        tar -czf /build/app.tar.gz -C / app
+      "
+    volumes:
+      - ./build:/build
+
+  dist_base:
+    build:
+      context: .
+      dockerfile: Dockerfile.dist_base
+    image: dist_base
+
+  dist_web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dist_web
+    image: registry.heroku.com/web-worker-containers-test/web
+
+  dist_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dist_worker
+    image: registry.heroku.com/web-worker-containers-test/worker
+
+volumes:
+  bundler_cache:
